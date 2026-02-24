@@ -14,34 +14,34 @@ class Ball:
     def __init__(self, x, y, r, m, colour):
         self.pos = pygame.Vector2(x, y)
         self.vel = pygame.Vector2(0, 0)
-        self.r = r
-        self.m = m
-        self.color = colour
+        self.radius = r
+        self.mass = m
+        self.colour = colour
     
     def update(self, dt):
         self.vel.y += g * dt
         self.pos += self.vel * dt
 
-        if self.pos.x < self.r: #collision checks with walls
-            self.pos.x = self.r
+        if self.pos.x < self.radius: #collision checks with walls
+            self.pos.x = self.radius
             self.vel.x *= -C
-        if self.pos.x > WIDTH - self.r:
-            self.pos.x = WIDTH - self.r
+        if self.pos.x > WIDTH - self.radius:
+            self.pos.x = WIDTH - self.radius
             self.vel.x *= -C
-        if self.pos.y < self.r:
-            self.pos.y = self.r
+        if self.pos.y < self.radius:
+            self.pos.y = self.radius
             self.vel.y *= -C
-        if self.pos.y > HEIGHT - self.r:
-            self.pos.y = HEIGHT - self.r
+        if self.pos.y > HEIGHT - self.radius:
+            self.pos.y = HEIGHT - self.radius
             self.vel.y *= -C
         
     def draw(self):
-        pygame.draw.circle(screen, self.color, self.pos, self.r)
+        pygame.draw.circle(screen, self.colour, self.pos, self.radius)
 
 def ball_collision(ball1, ball2):
     delta = (ball2.pos - ball1.pos)
     dist = delta.length()
-    if dist > ball1.r + ball2.r: #collisions are when the distance between the centres is less than the sum of the radii bc then they overlap
+    if dist > ball1.radius + ball2.radius: #collisions are when the distance between the centres is less than the sum of the radii bc then they overlap
         return
 
     n = delta.normalize() #gives the unit vector pointing along the line of impact
@@ -52,19 +52,19 @@ def ball_collision(ball1, ball2):
     u2 = ball2.vel.dot(n)
 
     #use the zero momentum frame maths from the BPhO Computational lecture
-    v = (ball1.m * u1 + ball2.m * u2) / (ball1.m + ball2.m)
+    v = (ball1.mass * u1 + ball2.mass * u2) / (ball1.mass + ball2.mass)
 
     v1n = -C * (u1-v) + v
     v2n = -C * (u2-v) + v
     ball1.vel += (v1n - u1) * n
     ball2.vel += (v2n - u2) * n
 
-    overlap = ball1.r + ball2.r - dist
+    overlap = ball1.radius + ball2.radius - dist
     # correction = n * (overlap / 2)
     # ball1.pos -= correction
     # ball2.pos += correction
-    ball1.pos -= n * overlap * (ball2.m / (ball1.m + ball2.m)) 
-    ball2.pos += n * overlap * (ball1.m / (ball1.m + ball2.m))
+    ball1.pos -= n * overlap * (ball2.mass / (ball1.mass + ball2.mass)) 
+    ball2.pos += n * overlap * (ball1.mass / (ball1.mass + ball2.mass))
     #because this is in discrete time, the balls may overlap over eachother (which is how collisions are detected in the first place)
     #the commented code above does a poor job correcting for this and looks unrealistic
     #instead the correction factor (which is just the overlap in the direction of the collision line, so overlap * n) is scaled
@@ -88,3 +88,4 @@ while True:
     ball1.draw()
     ball2.draw()
     pygame.display.flip()
+

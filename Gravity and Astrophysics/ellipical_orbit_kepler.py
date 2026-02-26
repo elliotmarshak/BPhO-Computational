@@ -68,7 +68,7 @@ ax = plt.subplot()
 ax.set_aspect("equal")
 ax.set_xlim(-1.5 * a, 1.5 * b)
 ax.set_ylim(-1.5 * a, 1.5 * a)
-ax.set_title("Simple Elliptical Orbit using Newton's Method for solving Kepler Equation")
+ax.set_title("Simple Elliptical Orbit using Newton's Method to solve Kepler Equation")
 ax.set_xlabel("x / AU")
 ax.set_ylabel("y / AU")
 

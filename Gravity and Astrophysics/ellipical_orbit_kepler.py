@@ -75,6 +75,8 @@ ax.set_ylabel("y / AU")
 ax.plot(0,0, color="yellow", marker="o", markersize=10)
 ax.plot(x_positions, y_positions, color="blue", alpha=0.3)
 
+ax.plot(0, 0, marker="o", color="gold", markersize=10)
+
 planet_dot, = ax.plot([], [], color = "blue", marker = "o", markersize=6)
 
 def update(frame):

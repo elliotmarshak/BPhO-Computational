@@ -28,3 +28,9 @@ The intensity measured on the screen is then $I(x) = {\vert \phi_{total}(x, y_{s
 
 <img width="699" height="398" alt="image" src="https://github.com/user-attachments/assets/308370ff-9ac3-4b44-8e3a-85cdc9dc9dd5" />
 
+### FFT Frequency Analyser
+I made a simple program where you can record audio from your microphone and have a spectrogram produced which shows the different frequencies present in the sample over time. It works by splitting the recording into overlapping frames, and then a Hann window (smoothly reduces signal to zero at obth ends) is applied to each frame which reduces spectral leakage (where sharp jumps/discontinuities are treated as high frequency components). Then a Fast Fourier Transform (FFT) is applied to each frame and finally I converted the magnitudes from the FFT to decibels and then plotted it on a spectrogram using a colour map.
+
+<img width="550" height="430" alt="image" src="https://github.com/user-attachments/assets/9545f219-21db-4a3b-8a1f-b7edb5ce1db2" />
+
+

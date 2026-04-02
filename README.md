@@ -33,4 +33,8 @@ I made a simple program where you can record audio from your microphone and have
 
 <img width="550" height="430" alt="image" src="https://github.com/user-attachments/assets/9545f219-21db-4a3b-8a1f-b7edb5ce1db2" />
 
+### Doppler Effect Simulation
+This simulation demonstrates the Doppler effect by animating a moving source and observer in a 2D scene. A second plot tracks the observed frequency. I used the Doppler formula for one dimension to track the observed frequency. <img width="619" height="394" alt="image" src="https://github.com/user-attachments/assets/465f25ac-fb2b-44c7-8c28-28d2ba997428" />
+
+
 

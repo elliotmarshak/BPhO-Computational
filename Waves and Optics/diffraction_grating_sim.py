@@ -1,13 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.widgets import Slider
 
-# Domain
 XMIN, XMAX, YMIN, YMAX = -6.0, 6.0, 0.0, 12.0
 SCREEN_Y = 9.5 #where the screen is
 EPS = 0.001 #avoid div by 0 errors
 NX, NY, SNX = 300, 225, 600 #nx and ny are the resolution of the wave grid and snx is the res of the screen
+DISPLAY_GAIN = 25 #boosts visibility of wave magnitude 
+WAVE_CMAP = LinearSegmentedColormap.from_list('blue_black_red', ['#1e4cff', '#000000', '#ff3a2f'])
 
 #create grids
 xs = np.linspace(XMIN, XMAX, NX)
@@ -16,7 +18,7 @@ X, Y = np.meshgrid(xs, ys)
 screen_xs = np.linspace(XMIN, XMAX, SNX)
 
 #stores the adjustable paramaters
-state = dict(n_slits=2, slit_sep=2.0, slit_width=0.0, wavelength=0.8, n_src=50, speed=1.5)
+state = dict(n_slits=2, slit_sep=2.0, slit_width=0.0, wavelength=0.8, n_src=50, speed=1.5, screen_y=SCREEN_Y)
 #n slits - number of slits
 #slit_sep - separation between adjacent slits
 #slit_width - the width of each slit
@@ -41,18 +43,18 @@ def wave_field(sources, k, omega, t):
         r = np.maximum(np.hypot(X - sx, Y - sy), EPS)
         #Sum contributions from each source with proper phase
         psi += np.exp(1j * (k * r - omega * t)) / r
-    # Return real part which oscillates
+    #Return real part which oscillates
     return np.real(psi)
 
 
-def screen_intensity(sources, k):
+def screen_intensity(sources, k, screen_y):
     #Calculate diffraction pattern intensity on detection screen
     
     #Uses complex wave representation to properly account for interference through phase relationships. Intensity is phi^2 
     total_wave = np.zeros_like(screen_xs, dtype=complex)
 
     for sx, sy in sources:
-        r = np.hypot(screen_xs - sx, SCREEN_Y - sy)
+        r = np.hypot(screen_xs - sx, screen_y - sy)
         r = np.maximum(r, EPS)
         #use complex exponential to preserve phase information for interference
         wave = np.exp(1j * k * r) / r
@@ -78,14 +80,14 @@ for ax in (ax_wave, ax_screen):
 #compute initial wave field
 k0 = 2 * np.pi / state['wavelength']
 psi0 = wave_field(sources, k0, 2 * state['speed'], 0)
-lim = abs(psi0).max()
+lim = max(np.abs(psi0).max(), 0.01)
 
 #wave field visualisation
-wave_im = ax_wave.imshow(abs(psi0), extent=[XMIN, XMAX, YMIN, YMAX], origin='lower', cmap='hot', vmin=0, vmax=lim, aspect='auto')
+wave_im = ax_wave.imshow(DISPLAY_GAIN * psi0, extent=[XMIN, XMAX, YMIN, YMAX], origin='lower', cmap=WAVE_CMAP, vmin=-lim, vmax=lim, aspect='auto')
 
 #screen indicator
-ax_wave.axhline(SCREEN_Y, color='#00ccff', linewidth=1.2, linestyle='--')
-ax_wave.text(XMIN + 0.15, SCREEN_Y + 0.2, 'screen', color='#00ccff', fontsize=8)
+screen_line = ax_wave.axhline(state['screen_y'], color='#00ccff', linewidth=2.2, linestyle='-', zorder=6)
+screen_label = ax_wave.text(XMIN + 0.15, state['screen_y'] + 0.2, 'screen', color='#00ccff', fontsize=8)
 
 #Mark source positions
 src_scatter = ax_wave.scatter(sources[:, 0], sources[:, 1], color='#ffff80', s=14, zorder=4)
@@ -96,7 +98,7 @@ for lbl in (ax_wave.xaxis.label, ax_wave.yaxis.label, ax_wave.title):
     lbl.set_color('#aaa' if lbl != ax_wave.title else '#ddd')
 
 #Diffraction pattern on screen
-intensity_0 = screen_intensity(sources, k0)
+intensity_0 = screen_intensity(sources, k0, state['screen_y'])
 
 #Show intensity as heatmap
 screen_im = ax_screen.imshow(np.tile(intensity_0, (60, 1)), extent=[XMIN, XMAX, 0, 0.45], origin='lower', aspect='auto', cmap='inferno', vmin=0, vmax=1)
@@ -124,11 +126,12 @@ slider_specs = [
     ('wavelength', 'Wavelength',          0.15, 1.5,  0.8,  0.05, 0,    1),
     ('n_src',      'Src / slit',       1,    100,   50,   1,    1,  1),
     ('speed',      'Speed',            0.5,  4.0,  1.5,  0.25, 2,   1),
+    ('screen_y',   'Screen y',         1.0,  11.5, SCREEN_Y, 0.1, 2,   2),
 ]
 
 #Grid positions for sliders (2 rows 3 columns)
 COL_LEFTS   = [0.05, 0.38, 0.70]
-ROW_BOTTOMS = [PLOT_TOP + 0.10, PLOT_TOP + 0.055]
+ROW_BOTTOMS = [PLOT_TOP + 0.13, PLOT_TOP + 0.085, PLOT_TOP + 0.04]
 
 def create_styled_slider(fig, label, vmin, vmax, valinit, valstep, col, row):
     #creates and styles one slider
@@ -152,12 +155,14 @@ def on_change(_):
     state.update({k: (int(sliders[k].val) if k in ('n_slits', 'n_src') else sliders[k].val) for k in sliders})
     
     #rebuild source positions
-    sources = build_sources(**{k: state[k] for k in ('n_slits', 'slit_sep', 'slit_width', 'n_src')})
+    sources = build_sources(state['n_slits'], state['slit_sep'], state['slit_width'], state['n_src'])
     src_scatter.set_offsets(sources)
+    screen_line.set_ydata([state['screen_y'], state['screen_y']])
+    screen_label.set_position((XMIN + 0.15, state['screen_y'] + 0.2))
     
     #update diffraction pattern
     k = 2 * np.pi / state['wavelength']
-    intensity = screen_intensity(sources, k)
+    intensity = screen_intensity(sources, k, state['screen_y'])
     screen_im.set_data(np.tile(intensity, (60, 1)))
     screen_curve.set_ydata(0.5 + 0.48 * intensity)
 
@@ -171,13 +176,9 @@ def update(_):
     
     k = 2 * np.pi / state['wavelength']
     psi = wave_field(sources, k, 2 * state['speed'], t[0])
-    psi_abs = abs(psi)
+    wave_im.set_data(DISPLAY_GAIN * psi)
     
-    lim = max(psi_abs.max(), 0.01)
-    wave_im.set_data(psi_abs)
-    wave_im.set_clim(0, lim)
-    
-    return wave_im, screen_im, screen_curve, src_scatter
+    return wave_im, screen_im, screen_curve, src_scatter, screen_line, screen_label
 
 ani = FuncAnimation(fig, update, interval=50, blit=True, cache_frame_data=False)
 plt.show()
